@@ -7,22 +7,84 @@ source("helpers.R")
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
-  "Add a title panel here!",
+  h2("Correlation Exploration"),
   sidebarLayout(
     sidebarPanel(
       h2("Select Variables to Find Correlation:"),
-      "Put your selectize inputs here!",
-      "Give them internal IDs of corr_x and corr_y.",
-      "Note the vector with these names comes from the helpers.R files. The object is called `numeric_vars`. Make sure you don't assign the same initial value to both inputs!",
+      selectInput(
+        "corr_x",
+        label = "x Variable",
+        choices = 
+          list(
+            "Total person's income",
+            "Water cost",
+            "Electricity cost",
+            "Gas cost",
+            "Gross rent as a percentage of income",
+            "Property taxes",
+            "Property value",
+            "Usual hours worked per week"
+          ),
+        selected = "Total person's income"
+      ),
+      selectInput(
+        "corr_y",
+        label = "y Variable",
+        choices = 
+          list(
+            "Travel time to work",
+            "Water cost",
+            "Electricity cost",
+            "Gas cost",
+            "Gross rent as a percentage of income",
+            "Property taxes",
+            "Property value",
+            "Usual hours worked per week"
+          ),
+        selected = "Travel time to work"
+      ),
+#      "Note the vector with these names comes from the helpers.R files. The object is called #`numeric_vars`. Make sure you don't assign the same initial value to both inputs!",
       br(),
-      "Place your radio buttons here! One radio button for each variable we may subset on. Set the internal IDs for these to be hhl_corr, fs_corr, and schl_corr.",
-      "Notice that you can use choiceNames and choiceValues to have different values show vs the values you use internally for comparisons. There are 'internal' values already used in the server file - the first large commented section - so you should set the internal values to match those!",
+      h2("Choose a subset of the data:"),
+      radioButtons(
+        "hhl_corr",
+        label = "Household Language",
+        choices = 
+          list("All",
+               "English Only",
+               "Spanish",
+               "Other"),
+        selected = "All"
+      ),
+      radioButtons(
+        "fs_corr",
+        label = "SNAP Recipient",
+        choices = 
+          list("All",
+               "Yes",
+               "No"),
+        selected = "All"
+      ),
+      radioButtons(
+        "schl_corr",
+        label = "Educational attainment",
+        choices = 
+          list("All",
+               "High School not Completed",
+               "High School or GED",
+               "College Degree"),
+        selected = "All",
+      ),
+#      "Notice that you can use choiceNames and choiceValues to have different values show vs the #values you use internally for comparisons. There are 'internal' values already used in the #server file - the first large commented section - so you should set the internal values to match #those!",
       h2("Select a Sample Size"),
-      "Put your slider for sample size here. Give this an ID of corr_n.",
+      sliderInput("corr_n",
+                  label = "",
+                  min = 20, max = 500, value = 20),
       actionButton("corr_sample","Get a Sample!")
     ),
     mainPanel(
-      "Add a plotOutput here for the scatter plot!",
+      "Please select your variables, subset, and click the 'Get a Sample!' button.",
+      # "Add a plotOutput here for the scatter plot!",
       conditionalPanel("input.corr_sample", #only show if a sample has been taken
                        h2("Guess the correlation!"),
                        column(6, 
