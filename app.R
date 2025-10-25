@@ -38,7 +38,7 @@ ui <- fluidPage(
                "english",
                "spanish",
                "other"),
-        selected = "All"
+        selected = "all"
       ),
       radioButtons(
         "fs_corr",
@@ -51,7 +51,7 @@ ui <- fluidPage(
           list("all",
                "yes",
                "no"),
-        selected = "All"
+        selected = "all"
       ),
       radioButtons(
         "schl_corr",
@@ -66,7 +66,7 @@ ui <- fluidPage(
                "no_hs",
                "hs",
                "college"),
-        selected = "All",
+        selected = "all",
       ),
       h2("Select a Sample Size"),
       sliderInput("corr_n",
@@ -187,23 +187,22 @@ server <- function(input, output, session) {
                        replace = TRUE,
                        prob = subsetted_data$PWGTP/sum(subsetted_data$PWGTP))
        #***You now need to update the sample_corr reactive value object
-       #the corr_data argument should be updated to be the subsetted_data[index,]
-       #the corr_truth argument should be updated to be the correlation between
-       #the two variables selected. This can be found with this code:
-       #cor(sample_corr$corr_data |> select(corr_vars))[1,2]
+       sample_corr$corr_data <- subsetted_data[index,]
+       sample_corr$corr_truth <-cor(sample_corr$corr_data |>
+                                    select(corr_vars))[1,2]
     })
 
 
     #Create a renderPlot() object to output a scatter plot
-    output$corr_scatter <- renderPlot(
+    output$corr_scatter <- renderPlot({
       validate(
-        need(!is.null(sample_corr$corr_data), 
+        need(!is.null(sample_corr$corr_data),
              "Please select your variables, subset, and click the 'Get a Sample!' button.")
-      ),
-      ggplot(sample_corr$corr_data, aes_string(x = isolate(input$corr_x), 
+      )
+      ggplot(sample_corr$corr_data, aes_string(x = isolate(input$corr_x),
                                                y = isolate(input$corr_y))) +
         geom_point()
-    )
+    })
 
 
     #This code does the correlation guessing game! Nothing to change here
