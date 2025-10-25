@@ -11,20 +11,26 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       h2("Select Variables to Find Correlation:"),
+      
+      # X variable to select
       selectInput(
         "corr_x",
         label = "x Variable",
         choices = numeric_vars,
         selected = numeric_vars[2]
       ),
+      
+      # Y variable to select
       selectInput(
         "corr_y",
         label = "y Variable",
         choices = numeric_vars,
         selected = numeric_vars[1]
       ),
-      br(),
+      
       h2("Choose a subset of the data:"),
+      
+      # Household language radio button
       radioButtons(
         "hhl_corr",
         label = "Household Language",
@@ -40,6 +46,8 @@ ui <- fluidPage(
                "other"),
         selected = "all"
       ),
+      
+      # SNAP recipient radio button
       radioButtons(
         "fs_corr",
         label = "SNAP Recipient",
@@ -53,6 +61,8 @@ ui <- fluidPage(
                "no"),
         selected = "all"
       ),
+      
+      # Educational attainment radio button
       radioButtons(
         "schl_corr",
         label = "Educational attainment",
@@ -68,14 +78,20 @@ ui <- fluidPage(
                "college"),
         selected = "all",
       ),
+      
       h2("Select a Sample Size"),
+      
+      # Slider to select sample size
       sliderInput("corr_n",
                   label = "",
                   min = 20, max = 500, value = 20),
       actionButton("corr_sample","Get a Sample!")
     ),
+    
     mainPanel(
+      # Update the plot when the Get a Sample! button is selected
       plotOutput("corr_scatter"),
+      # Correlation Guessing Game
       conditionalPanel("input.corr_sample", #only show if a sample has been taken
                        h2("Guess the correlation!"),
                        column(6, 
@@ -93,6 +109,7 @@ ui <- fluidPage(
   )
 )
 
+# Load the data from the relational database
 my_sample <- readRDS("my_sample_temp.rds")
 
 # Define server logic required to draw a histogram
@@ -127,14 +144,16 @@ server <- function(input, output, session) {
       }
     })
     
-    
+    # Create reactive variables to hold the data and true corr value
     sample_corr <- reactiveValues(
       corr_data = NULL,
       corr_truth = NULL
     )
 
+    # Update when the Get a Sample! button is selected
     observeEvent(input$corr_sample, {
-       if(input$hhl_corr == "all"){
+      # Updates based on the Household Language radio button 
+      if(input$hhl_corr == "all"){
          hhl_sub <- HHLvals
        } else if(input$hhl_corr == "english"){
          hhl_sub <- HHLvals["1"]
@@ -144,6 +163,7 @@ server <- function(input, output, session) {
          hhl_sub <- HHLvals[c("0", "3", "4", "5")]
        }
      
+       # Updates based on the SNAP Recipient radio button
        if(input$fs_corr == "all"){
          fs_sub <- FSvals
        } else if(input$fs_corr == "yes"){
@@ -152,6 +172,7 @@ server <- function(input, output, session) {
          fs_sub <- FSvals["2"]
        }
      
+       # Updates based on the Educational attainment radio button
        if(input$schl_corr == "all"){
          schl_sub <- SCHLvals
        } else if(input$schl_corr == "no_hs"){
@@ -164,8 +185,10 @@ server <- function(input, output, session) {
          schl_sub <- SCHLvals[as.character(20:24)]
        }
      
+       # Gets the two variables selected in the selectInput dropdown menus
        corr_vars <- c(input$corr_x, input$corr_y)
      
+       # Filter the data based on the radio button selections
        subsetted_data <- my_sample |>
          filter(#cat vars first
            HHLfac %in% hhl_sub,
@@ -182,18 +205,22 @@ server <- function(input, output, session) {
          {if("PINCP" %in% corr_vars) filter(., AGEP > 18) else .} %>%
          {if("JWMNP" %in% corr_vars) filter(., !is.na(JWMNP)) else .}
      
+       # Take a random sample of the filtered data
        index <- sample(1:nrow(subsetted_data),
                        size = input$corr_n,
                        replace = TRUE,
                        prob = subsetted_data$PWGTP/sum(subsetted_data$PWGTP))
-       #***You now need to update the sample_corr reactive value object
+       
+       # Update the sample_corr reactive value object with the randomly sampled
+       # subset of the filtered data. Then get the true correlation between the
+       # two variables selected
        sample_corr$corr_data <- subsetted_data[index,]
        sample_corr$corr_truth <-cor(sample_corr$corr_data |>
                                     select(corr_vars))[1,2]
     })
 
 
-    #Create a renderPlot() object to output a scatter plot
+    # Create a scatter plot from the subsetted data and the two variables selected
     output$corr_scatter <- renderPlot({
       validate(
         need(!is.null(sample_corr$corr_data),
